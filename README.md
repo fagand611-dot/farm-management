@@ -44,7 +44,7 @@ and syncs when the phone is back online.
 
 ### 3. Create the database
 
-1. **Build › Firestore Database › Create database.**
+1. **Databases & Storage › Firestore › Create database** (in the left sidebar; or type "Firestore" into Search for products).
 2. Location: **europe-west1 (Belgium)** or the **eur3** multi-region. This can't be changed later.
 3. Start in **production mode**. The rules in this folder replace the default ones in step 6.
 
@@ -60,7 +60,7 @@ Also put your project ID in `.firebaserc` (and in `.github/workflows/deploy.yml`
 
 ### 5. Turn on sign-in
 
-1. **Build › Authentication › Get started.**
+1. **Security › Authentication › Get started** (in the left sidebar; or type "Authentication" into Search for products).
 2. **Sign-in method** tab:
    - Enable **Google**. Pick your email as the support email.
    - Enable **Email/Password**. Leave "Email link (passwordless sign-in)" **off**. iPhone home-screen
@@ -69,7 +69,9 @@ Also put your project ID in `.firebaserc` (and in `.github/workflows/deploy.yml`
 3. **Settings › Authorised domains**: check that `<project-id>.web.app` is listed. Add your own domain
    here too if you set one up later.
 4. Because `authDomain` is now the `.web.app` address, allow it in Google's sign-in settings:
-   - Open <https://console.cloud.google.com/apis/credentials> with the same project selected.
+   - On Firebase's **Project settings** page, click **View in Google Cloud**, then go to
+     **APIs & Services › Credentials** (or open <https://console.cloud.google.com/apis/credentials>
+     with the same project selected).
    - Under **OAuth 2.0 Client IDs**, open **Web client (auto created by Google Service)**.
    - Under **Authorised redirect URIs**, add `https://<project-id>.web.app/__/auth/handler` and save.
      It can take a few minutes to start working.
@@ -89,7 +91,7 @@ This publishes `public/` to `https://<project-id>.web.app` and uploads `firestor
 The app only lets in people listed in a `members` collection, and only admins can add people.
 So the very first admin is added by hand:
 
-1. **Firestore Database › Data › Start collection.** Collection ID: `members`.
+1. **Databases & Storage › Firestore › Data › Start collection.** Collection ID: `members`.
 2. **Document ID:** your email address in **lower case**, exactly as you'll sign in with it.
 3. Add two fields, both type **string**:
    - `person` = `David` (your name as it appears on the rota)
@@ -143,7 +145,7 @@ Every push to `main` then publishes the app. **Security rules still deploy by ha
 
 ## Check the security rules (5 minutes)
 
-**Firestore › Rules › Rules Playground** lets you try requests against the live rules.
+**Databases & Storage › Firestore › Rules › Rules Playground** lets you try requests against the live rules.
 Set **Authentication** to "Authenticated", provider `google.com`, and edit the token JSON
 to include `"email": "<address>"` and `"email_verified": true`. Then check:
 
@@ -199,7 +201,7 @@ Every document written by the app also carries `updatedBy` (email) and `updatedA
 | You see | Fix |
 |---|---|
 | "Almost there… isn't connected to Firebase yet" | `public/config.js` still has placeholder values (step 4). |
-| "This web address isn't allowed to sign in yet" | Add the address under Authentication › Settings › Authorised domains (step 5.3). |
+| "This web address isn't allowed to sign in yet" | Add the address under Security › Authentication › Settings › Authorised domains (step 5.3). |
 | Google sign-in on iPhone goes round in a loop | Check `authDomain` is `<project-id>.web.app` (step 4) and the redirect URI is saved (step 5.4). |
 | "Not on the list yet" for someone you added | The `members` document ID must be their email in lower case, exactly matching the account they signed in with. |
 | A change says "wasn't saved: you don't have permission" | That person is a Member trying an admin-only change, or the rules haven't been deployed (step 6). |
