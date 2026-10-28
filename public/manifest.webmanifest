@@ -1,0 +1,16 @@
+{
+  "name": "Lough Ree Farm",
+  "short_name": "Farm",
+  "description": "Rota, jobs, year plan and weekly meeting for the farm.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f1f3ea",
+  "theme_color": "#2d683b",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

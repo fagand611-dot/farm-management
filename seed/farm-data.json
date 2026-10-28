@@ -1,0 +1,520 @@
+{
+  "people": {
+    "ai-tech": {
+      "days": "When applicable",
+      "kind": "contact",
+      "name": "AI technician",
+      "order": 8,
+      "phone": "",
+      "role": ""
+    },
+    "contractor": {
+      "days": "When applicable",
+      "kind": "contact",
+      "name": "Contractor",
+      "order": 9,
+      "phone": "",
+      "role": ""
+    },
+    "david": {
+      "days": "When applicable",
+      "kind": "team",
+      "name": "David",
+      "order": 5,
+      "phone": "",
+      "role": "Farm Relief Services / cover"
+    },
+    "eamonn": {
+      "days": "When applicable",
+      "kind": "team",
+      "name": "Eamonn",
+      "order": 2,
+      "phone": "",
+      "role": "Ad-hoc help & advisory"
+    },
+    "kevin": {
+      "days": "When applicable",
+      "kind": "team",
+      "name": "Kevin",
+      "order": 6,
+      "phone": "",
+      "role": "Farm Relief Services / cover"
+    },
+    "oisin": {
+      "days": "As booked",
+      "kind": "team",
+      "name": "Oisin",
+      "order": 4,
+      "phone": "",
+      "role": "Farm Relief Services / cover"
+    },
+    "p": {
+      "days": "Five days per week",
+      "kind": "team",
+      "name": "P",
+      "order": 1,
+      "phone": "",
+      "role": "Runs the farm"
+    },
+    "stacey": {
+      "days": "Mon–Fri AM, alternate weekends",
+      "kind": "team",
+      "name": "Stacey",
+      "order": 3,
+      "phone": "",
+      "role": "Full-time; weekday AM milking, every 2nd weekend"
+    },
+    "vet": {
+      "days": "When applicable",
+      "kind": "contact",
+      "name": "Vet",
+      "order": 7,
+      "phone": "",
+      "role": ""
+    }
+  },
+  "jobs": {
+    "salmonella-vacs": {
+      "area": "Herd health",
+      "createdAt": 1792000000000,
+      "doneOn": "",
+      "due": "2026-10-20",
+      "notes": "Example – overwrite",
+      "owner": "Eamonn",
+      "priority": "High",
+      "status": "Not started",
+      "title": "Salmonella vacs"
+    }
+  },
+  "rota": {
+    "2026-10-19": {
+      "duties": [
+        {
+          "days": [
+            "Stacey",
+            "Stacey",
+            "Stacey",
+            "Stacey",
+            "Stacey",
+            "",
+            ""
+          ],
+          "duty": "Parlour – AM milking",
+          "notes": ""
+        },
+        {
+          "days": [
+            "David",
+            "David",
+            "Eamonn",
+            "Eamonn",
+            "Oisin",
+            "",
+            ""
+          ],
+          "duty": "Parlour – PM milking",
+          "notes": ""
+        },
+        {
+          "days": [
+            "Eamonn",
+            "Eamonn",
+            "Kevin",
+            "Kevin",
+            "Kevin",
+            "",
+            ""
+          ],
+          "duty": "Robot – checks & wires",
+          "notes": ""
+        },
+        {
+          "days": [
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            ""
+          ],
+          "duty": "Calf feeding",
+          "notes": ""
+        },
+        {
+          "days": [
+            "Stacey",
+            "Stacey",
+            "Stacey",
+            "Stacey",
+            "Stacey",
+            "",
+            ""
+          ],
+          "duty": "Day jobs 1",
+          "notes": ""
+        },
+        {
+          "days": [
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            ""
+          ],
+          "duty": "Day jobs 2",
+          "notes": ""
+        },
+        {
+          "days": [
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            ""
+          ],
+          "duty": "Off 1",
+          "notes": ""
+        },
+        {
+          "days": [
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            ""
+          ],
+          "duty": "Off 2",
+          "notes": ""
+        }
+      ],
+      "weekStart": "2026-10-19"
+    }
+  },
+  "meetings": {
+    "2026-10-25": {
+      "date": "2026-10-25",
+      "decisions": "Dad owns calves & youngstock from now on",
+      "done": "Rota agreed",
+      "followUp": "Talk about machinery spend next month",
+      "next": "Book relief milker for 7–8 Nov",
+      "owner": "P"
+    }
+  },
+  "config": {
+    "calendar": {
+      "items": [
+        {
+          "area": "Herd health",
+          "months": [
+            2,
+            3,
+            4
+          ],
+          "notes": "",
+          "owner": "",
+          "task": "Calving"
+        },
+        {
+          "area": "Calves & youngstock",
+          "months": [
+            2,
+            3,
+            4,
+            5
+          ],
+          "notes": "Per vet plan",
+          "owner": "",
+          "task": "Calf vaccinations & disbudding"
+        },
+        {
+          "area": "Breeding & AI",
+          "months": [
+            4,
+            5,
+            6,
+            7
+          ],
+          "notes": "",
+          "owner": "",
+          "task": "Breeding season / AI"
+        },
+        {
+          "area": "Breeding & AI",
+          "months": [
+            8,
+            9
+          ],
+          "notes": "",
+          "owner": "",
+          "task": "Pregnancy scanning"
+        },
+        {
+          "area": "Herd health",
+          "months": [
+            11,
+            12
+          ],
+          "notes": "",
+          "owner": "",
+          "task": "Drying off"
+        },
+        {
+          "area": "Herd health",
+          "months": [
+            1,
+            2
+          ],
+          "notes": "Per vet plan",
+          "owner": "",
+          "task": "Herd vaccinations"
+        },
+        {
+          "area": "Calves & youngstock",
+          "months": [
+            6,
+            7,
+            8,
+            9
+          ],
+          "notes": "Per vet plan",
+          "owner": "",
+          "task": "Dosing youngstock"
+        },
+        {
+          "area": "Herd health",
+          "months": [],
+          "notes": "Mark the month your herd test falls in",
+          "owner": "",
+          "task": "Herd test (TB)"
+        },
+        {
+          "area": "Herd health",
+          "months": [
+            4,
+            6,
+            8,
+            10
+          ],
+          "notes": "Adjust to your schedule",
+          "owner": "",
+          "task": "Milk recording"
+        },
+        {
+          "area": "Silage & feed",
+          "months": [
+            6
+          ],
+          "notes": "",
+          "owner": "",
+          "task": "First-cut silage"
+        },
+        {
+          "area": "Silage & feed",
+          "months": [
+            8
+          ],
+          "notes": "",
+          "owner": "",
+          "task": "Second-cut silage"
+        },
+        {
+          "area": "Slurry & fertiliser",
+          "months": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "notes": "Check current rules",
+          "owner": "",
+          "task": "Fertiliser spreading"
+        },
+        {
+          "area": "Slurry & fertiliser",
+          "months": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "notes": "Check current closed period",
+          "owner": "",
+          "task": "Slurry spreading"
+        },
+        {
+          "area": "Grass & grazing",
+          "months": [
+            4,
+            5,
+            8
+          ],
+          "notes": "",
+          "owner": "",
+          "task": "Reseeding"
+        },
+        {
+          "area": "Milking – parlour",
+          "months": [
+            1
+          ],
+          "notes": "",
+          "owner": "",
+          "task": "Parlour service"
+        },
+        {
+          "area": "Robot unit",
+          "months": [
+            1,
+            7
+          ],
+          "notes": "As per dealer",
+          "owner": "",
+          "task": "Robot service"
+        },
+        {
+          "area": "Machinery & repairs",
+          "months": [
+            1,
+            12
+          ],
+          "notes": "",
+          "owner": "",
+          "task": "Machinery service"
+        },
+        {
+          "area": "Silage & feed",
+          "months": [
+            9
+          ],
+          "notes": "",
+          "owner": "",
+          "task": "Fodder budget"
+        },
+        {
+          "area": "Finances & paperwork",
+          "months": [
+            11
+          ],
+          "notes": "",
+          "owner": "",
+          "task": "Annual accounts & planning"
+        }
+      ]
+    },
+    "roles": {
+      "areas": [
+        {
+          "area": "Milking – parlour",
+          "backup": "Eamonn",
+          "decides": "Milking routine, wash routine, rota swaps",
+          "meeting": "New staff, changes to milking times",
+          "notes": "",
+          "owner": "P"
+        },
+        {
+          "area": "Robot unit",
+          "backup": "Eamonn",
+          "decides": "Daily checks & wires routine, rota",
+          "meeting": "Known issues, wires movement plan for week ahead",
+          "notes": "",
+          "owner": "P"
+        },
+        {
+          "area": "Herd health",
+          "backup": "P",
+          "decides": "",
+          "meeting": "",
+          "notes": "",
+          "owner": "Eamonn"
+        },
+        {
+          "area": "Breeding & AI",
+          "backup": "P",
+          "decides": "",
+          "meeting": "",
+          "notes": "",
+          "owner": "Eamonn"
+        },
+        {
+          "area": "Calves & youngstock",
+          "backup": "",
+          "decides": "",
+          "meeting": "",
+          "notes": "",
+          "owner": ""
+        },
+        {
+          "area": "Grass & grazing",
+          "backup": "",
+          "decides": "",
+          "meeting": "",
+          "notes": "",
+          "owner": ""
+        },
+        {
+          "area": "Silage & feed",
+          "backup": "Eamonn",
+          "decides": "",
+          "meeting": "",
+          "notes": "",
+          "owner": "P"
+        },
+        {
+          "area": "Slurry & fertiliser",
+          "backup": "Eamonn",
+          "decides": "",
+          "meeting": "",
+          "notes": "",
+          "owner": "P"
+        },
+        {
+          "area": "Machinery & repairs",
+          "backup": "Eamonn",
+          "decides": "",
+          "meeting": "",
+          "notes": "",
+          "owner": "P"
+        },
+        {
+          "area": "Staff & rota",
+          "backup": "",
+          "decides": "",
+          "meeting": "",
+          "notes": "",
+          "owner": ""
+        },
+        {
+          "area": "Finances & paperwork",
+          "backup": "P",
+          "decides": "",
+          "meeting": "",
+          "notes": "",
+          "owner": "Eamonn"
+        },
+        {
+          "area": "Contractors & suppliers",
+          "backup": "P",
+          "decides": "",
+          "meeting": "",
+          "notes": "",
+          "owner": "Eamonn"
+        }
+      ]
+    }
+  }
+}

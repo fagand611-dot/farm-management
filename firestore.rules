@@ -1,0 +1,114 @@
+rules_version = '2';
+
+// Security rules for the farm app.
+// - Only signed-in people with a confirmed email AND a document in /members can see anything.
+// - Members: read everything; add/edit jobs, rota and meetings.
+// - Admins: also people, the year plan, who owns what, and who has access.
+// - Every write must say who made it (updatedBy) and when (updatedAt), and match the expected shape.
+// Deploy with:  firebase deploy --only firestore:rules
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- who is asking ----------
+    function verified() {
+      return request.auth != null
+        && 'email' in request.auth.token
+        && request.auth.token.email_verified == true;
+    }
+    function myEmail() { return request.auth.token.email.lower(); }
+    function memberPath() { return /databases/$(database)/documents/members/$(myEmail()); }
+    function isMember() { return verified() && exists(memberPath()); }
+    function isAdmin() { return isMember() && get(memberPath()).data.role == 'admin'; }
+
+    // ---------- what is being written ----------
+    function incoming() { return request.resource.data; }
+    function stamped() {
+      return incoming().updatedBy == myEmail() && incoming().updatedAt == request.time;
+    }
+    // Optional text field, at most `max` characters.
+    function text(f, max) {
+      return !(f in incoming()) || (incoming()[f] is string && incoming()[f].size() <= max);
+    }
+    // Optional date field: "" or YYYY-MM-DD.
+    function day(f) {
+      return !(f in incoming())
+        || (incoming()[f] is string && (incoming()[f] == '' || incoming()[f].matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')));
+    }
+
+    // ---------- access list ----------
+    match /members/{email} {
+      allow read: if verified() && (email == myEmail() || isMember());
+      allow create, update: if isAdmin() && stamped()
+        && email == email.lower()
+        && incoming().keys().hasOnly(['person', 'role', 'updatedBy', 'updatedAt'])
+        && text('person', 60)
+        && incoming().role in ['admin', 'member']
+        // An admin can't demote themselves, so there's always someone who can manage access.
+        && (email != myEmail() || incoming().role == 'admin');
+      allow delete: if isAdmin() && email != myEmail();
+    }
+
+    // ---------- day-to-day: any member ----------
+    match /jobs/{id} {
+      allow read: if isMember();
+      allow create, update: if isMember() && stamped()
+        && incoming().keys().hasOnly(['title', 'area', 'owner', 'due', 'priority', 'status', 'notes', 'doneOn', 'createdAt', 'updatedBy', 'updatedAt'])
+        && incoming().title is string && incoming().title.size() > 0 && incoming().title.size() <= 200
+        && text('area', 80) && text('owner', 80) && text('notes', 2000)
+        && day('due') && day('doneOn')
+        && incoming().status in ['Not started', 'In progress', 'Done']
+        && (!('priority' in incoming()) || incoming().priority in ['High', 'Medium', 'Low'])
+        && (!('createdAt' in incoming()) || incoming().createdAt is number);
+      allow delete: if isMember();
+    }
+
+    match /rota/{week} {
+      allow read: if isMember();
+      allow create, update: if isMember() && stamped()
+        && week.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && incoming().keys().hasOnly(['weekStart', 'duties', 'updatedBy', 'updatedAt'])
+        && incoming().weekStart == week
+        && incoming().duties is list && incoming().duties.size() <= 20;
+      allow delete: if isAdmin();
+    }
+
+    match /meetings/{id} {
+      allow read: if isMember();
+      allow create, update: if isMember() && stamped()
+        && incoming().keys().hasOnly(['date', 'owner', 'done', 'next', 'decisions', 'followUp', 'updatedBy', 'updatedAt'])
+        && incoming().date is string && incoming().date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && text('owner', 80) && text('done', 4000) && text('next', 4000)
+        && text('decisions', 4000) && text('followUp', 4000);
+      allow delete: if isAdmin();
+    }
+
+    // ---------- set-up: admins only ----------
+    match /people/{id} {
+      allow read: if isMember();
+      allow create, update: if isAdmin() && stamped()
+        && incoming().keys().hasOnly(['name', 'role', 'phone', 'days', 'kind', 'order', 'updatedBy', 'updatedAt'])
+        && incoming().name is string && incoming().name.size() > 0 && incoming().name.size() <= 60
+        && text('role', 120) && text('phone', 30) && text('days', 120)
+        && incoming().kind in ['team', 'contact']
+        && (!('order' in incoming()) || incoming().order is number);
+      allow delete: if isAdmin();
+    }
+
+    match /config/calendar {
+      allow read: if isMember();
+      allow create, update: if isAdmin() && stamped()
+        && incoming().keys().hasOnly(['items', 'updatedBy', 'updatedAt'])
+        && incoming().items is list && incoming().items.size() <= 200;
+    }
+
+    match /config/roles {
+      allow read: if isMember();
+      allow create, update: if isAdmin() && stamped()
+        && incoming().keys().hasOnly(['areas', 'updatedBy', 'updatedAt'])
+        && incoming().areas is list && incoming().areas.size() <= 50;
+    }
+
+    // Anything else is closed.
+  }
+}
