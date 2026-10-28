@@ -1,7 +1,7 @@
 # Deploys the app to Firebase Hosting every time you push to main.
 # Easiest setup: run `firebase init hosting:github` once (README step 11). It creates the
 # FIREBASE_SERVICE_ACCOUNT_... secret in your GitHub repo for you; then make sure the secret
-# name below matches the one it created, and set YOUR-PROJECT-ID.
+# name below matches the one it created, and set loughree-farm.
 #
 # This deploys the app only. Security rules are deployed by hand:
 #   firebase deploy --only firestore:rules
@@ -22,4 +22,4 @@ jobs:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           channelId: live
-          projectId: YOUR-PROJECT-ID
+          projectId: loughree-farm

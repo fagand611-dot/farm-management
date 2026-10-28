@@ -1,15 +1,16 @@
-// Firebase web config for this farm's project.
-// Copy the values from Firebase console > Project settings > General > Your apps > Web app.
+// Firebase web config for the loughree-farm project.
+// From Firebase console > Project settings > General > Your apps > Web app (Config).
 // These values are not secret: access is controlled by the sign-in and the Firestore security rules.
 //
-// IMPORTANT: set authDomain to your Hosting address (e.g. "loughree-farm.web.app"),
-// not the default "...firebaseapp.com". Google sign-in on iPhones depends on it. See README step 5.
+// authDomain is deliberately the Hosting address (loughree-farm.web.app), not the default
+// "loughree-farm.firebaseapp.com". Google sign-in on iPhones depends on it. See README step 5.
 
 export const firebaseConfig = {
-  apiKey: "REPLACE_ME",
-  authDomain: "YOUR-PROJECT-ID.web.app",
-  projectId: "YOUR-PROJECT-ID",
-  storageBucket: "YOUR-PROJECT-ID.firebasestorage.app",
-  messagingSenderId: "REPLACE_ME",
-  appId: "REPLACE_ME",
+  apiKey: "AIzaSyDrZkD5vEMdvnb3hbsr8VLfoNNDKLJwxYI",
+  authDomain: "loughree-farm.web.app",
+  projectId: "loughree-farm",
+  storageBucket: "loughree-farm.firebasestorage.app",
+  messagingSenderId: "405198054540",
+  appId: "1:405198054540:web:55fcac3629b7032a5107a9",
+  measurementId: "G-ZSPXSD78NS",
 };
