@@ -19,6 +19,7 @@ and syncs when the phone is back online.
 | `public/index.html` | The page, header and tab bar |
 | `public/app.js` | All the screens and logic |
 | `public/firebase.js` | Firebase imports (SDK version set here) |
+| `public/xlsx.js` | Reads the knowledge base .xlsx in the browser |
 | `public/config.js` | **Your project's web config. You fill this in.** |
 | `public/style.css` | Design, light and dark |
 | `public/sw.js` | Service worker: lets the app open with no signal |
@@ -101,7 +102,7 @@ So the very first admin is added by hand:
 ### 8. Sign in and import your data
 
 1. On your laptop, open `https://<project-id>.web.app` and **Continue with Google** with that email.
-2. Tap your ear tag (top right) › **Import farm data from a file** › choose `seed/farm-data.json`.
+2. Tap your ear tag (top right) › **Restore from a backup file** › choose `seed/farm-data.json`.
 3. You should see 14 records imported: 9 people, 1 job, last week's rota, Sunday's meeting,
    the year plan and who owns what.
 
@@ -165,8 +166,8 @@ which is expected. The app always adds them.
 
 ## Day-to-day
 
-- **Backups:** an admin can tap their ear tag › **Download a full backup** (JSON). Import the
-  same file to restore. **Download jobs as a spreadsheet** gives a CSV that opens in Excel or
+- **Backups:** an admin can tap their ear tag › **Download a full backup** (JSON).
+  **Restore from a backup file** puts it back. **Download jobs as a spreadsheet** gives a CSV that opens in Excel or
   Google Sheets.
 - **Who changed what:** each job, meeting, rota week and the year plan records who last
   changed it and when. It shows at the bottom of the edit screen.
@@ -182,17 +183,77 @@ Installed apps pick up the new version the next time they're opened with signal.
 To upgrade Firebase, change the version number in the three URLs in `public/firebase.js`
 and `FIREBASE_VERSION` in `public/sw.js`, then deploy.
 
+## Who can do what
+
+| | Member | Admin |
+|---|---|---|
+| See everything (jobs, rota, map, calendar, how-to guide) | Yes | Yes |
+| Tick off and update **their own** jobs (status and feedback) | Yes | Yes |
+| Finish a job marked **Needs review** | Sends it for review | Approves it or sends it back |
+| Add, assign, edit or delete jobs | No (they use **Report a problem**) | Yes |
+| Fill in the rota, mark routine duties done, log meetings | Yes | Yes |
+| Mark grazing instructions done | Yes | Yes |
+| Give grazing instructions, draw map sections, book calendar dates | No | Yes |
+| Season switches, knowledge base import, access, backups | No | Yes |
+
+These are enforced by the security rules, not only hidden in the app.
+
+## The knowledge base
+
+The how-to guide, the daily routine, the year plan, rules and contacts all come from the
+**farm-knowledge** Google Sheet. To update the app after changing the sheet:
+
+1. In Google Sheets: **File › Download › Microsoft Excel (.xlsx)**.
+2. In the app: tap your ear tag › **Import knowledge base (.xlsx)** and choose the file.
+3. Check the summary (it lists anything worth fixing on the sheet) and tap **Import**.
+
+Importing again replaces the knowledge base with the file. It never touches jobs, the rota,
+meetings, the calendar or the map. Rows marked "Not done on this farm" are left out.
+
+The columns the app relies on:
+
+- **ID** (e.g. MP-01) links Jobs to Procedures and to calendar entries. Don't change an ID once it's in use.
+- **How often**, **Time of day**, the **month ticks** and **Condition or trigger** decide when a job shows.
+- **Rota duty** puts daily jobs into that duty's checklist on Today ("Parlour milking" covers the AM and PM milkings by time of day; "Day jobs" covers Day jobs 1 and 2).
+- **Start date** and **End date** on Rules & dates drive the warnings on Today (three weeks ahead, and while in force).
+
+## Season switches
+
+**Farm › Calendar › Right now on the farm.** Each switch is Auto, On or Off:
+
+- **Auto** follows the months ticked in the knowledge base.
+- **On** shows the jobs with that condition even outside their months (e.g. cows housed early).
+- **Off** hides them (e.g. cows still out in November).
+
+## Farm map and grazing instructions
+
+1. **Map › Add a farm map**: a screenshot of the farm from Google Maps, or a photo of a drawn map.
+   The app shrinks it to fit in the database (no paid storage needed).
+2. **Draw a section**: tap each corner on the map, tap **Finish** and name it (A1, C3…).
+3. Tap a section › **Send cows to C3**: pick the date, when (morning, daytime, evening, night),
+   the herd, and write the instruction ("give them two fencing posts more of space").
+4. Everyone sees it under **Grazing** on Today and on the map. Whoever moves the wires ticks it.
+
+**Map options** renames the map, replaces the picture (sections stay in place) or adds another map.
+
 ## Data model
 
 | Path | Contents | Who can change it |
 |---|---|---|
 | `members/{email}` | `person`, `role` (`admin` or `member`) | Admins |
 | `people/{id}` | `name`, `role`, `phone`, `days`, `kind` (`team` / `contact`), `order` | Admins |
-| `jobs/{id}` | `title`, `area`, `owner`, `due`, `priority`, `status`, `notes`, `doneOn`, `createdAt` | Members |
+| `jobs/{id}` | `title`, `area`, `owner`, `due`, `priority`, `status` (Not started / In progress / Awaiting review / Done), `notes`, `doneOn`, `needsReview`, `feedback`, `reviewNote`, `reviewedBy`, `reviewedAt` | Admins; the owner can change `status` and `feedback` |
+| `reports/{id}` | `text`, `area`, `duty`, `person`, `date`, `status` (Open / Closed / Made into job) | Members create; admins update |
 | `rota/{YYYY-MM-DD}` | `weekStart` (a Monday), `duties`: list of `{duty, notes, days[7]}` | Members (delete: admins) |
+| `routine/{date}_{duty}` | `date`, `duty`, `person`: a routine duty marked done | Members |
 | `meetings/{id}` | `date`, `owner`, `done`, `next`, `decisions`, `followUp` | Members (delete: admins) |
-| `config/calendar` | `items`: list of `{task, area, owner, months[], notes}` | Admins |
-| `config/roles` | `areas`: list of `{area, owner, backup, decides, meeting, notes}` | Admins |
+| `events/{id}` | `title`, `date`, `time`, `kbId`, `people[]`, `notes`: calendar entries | Admins |
+| `maps/{id}` | `name`, `image` (JPEG data URL), `w`, `h`, `sections`: list of `{id, label, points}` | Admins |
+| `allocations/{id}` | `date`, `slot`, `herd`, `mapId`, `section`, `note`, `done`, `doneBy`, `doneAt` | Admins; anyone can mark done |
+| `kb/{ID}` | One knowledge-base job, with its how-to `steps` | Admins (by import) |
+| `kbRules/{id}`, `contacts/{id}` | Rules & dates, and contacts, from the sheet | Admins (by import) |
+| `config/areas`, `config/roles`, `config/calendar` | Areas list, who owns what, the old year plan (used only before the knowledge base is imported) | Admins |
+| `config/farmState` | Season switches: `inMilk`, `housed`, `atGrass`, `calving`, `breeding`, `calvesOnMilk` | Admins |
 
 Every document written by the app also carries `updatedBy` (email) and `updatedAt` (server time).
 
@@ -215,7 +276,12 @@ of people using this every day stays far below that. If a free limit were ever r
 Firebase pauses that service until the next month rather than charging.
 Check current figures at <https://firebase.google.com/pricing>.
 
-## Phase 2 ideas (need the pay-as-you-go Blaze plan for Cloud Functions)
+## Next releases
+
+Release 2 (free plan): reminders created automatically from weekly, monthly and yearly
+knowledge-base jobs; a workload view from the Minutes column.
+
+Release 3 ideas (need the pay-as-you-go Blaze plan for Cloud Functions)
 
 - Morning push notification: "You're on PM milking today", "2 jobs overdue"
 - Sunday-evening reminder to set next week's rota

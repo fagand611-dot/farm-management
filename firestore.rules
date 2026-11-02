@@ -2,8 +2,11 @@ rules_version = '2';
 
 // Security rules for the farm app.
 // - Only signed-in people with a confirmed email AND a document in /members can see anything.
-// - Members: read everything; add/edit jobs, rota and meetings.
-// - Admins: also people, the year plan, who owns what, and who has access.
+// - Members: read everything; tick off and update their OWN jobs (status and feedback only);
+//   can't finish a review job without sending it for review; can't add, assign or delete jobs;
+//   fill in the rota, log meetings, mark routine duties done, mark grazing instructions done,
+//   report problems.
+// - Admins: everything else, including jobs, reviews, the knowledge base, maps, calendar and access.
 // - Every write must say who made it (updatedBy) and when (updatedAt), and match the expected shape.
 // Deploy with:  firebase deploy --only firestore:rules
 
@@ -19,7 +22,9 @@ service cloud.firestore {
     function myEmail() { return request.auth.token.email.lower(); }
     function memberPath() { return /databases/$(database)/documents/members/$(myEmail()); }
     function isMember() { return verified() && exists(memberPath()); }
-    function isAdmin() { return isMember() && get(memberPath()).data.role == 'admin'; }
+    function memberData() { return get(memberPath()).data; }
+    function isAdmin() { return isMember() && memberData().role == 'admin'; }
+    function myPerson() { return memberData().get('person', ''); }
 
     // ---------- what is being written ----------
     function incoming() { return request.resource.data; }
@@ -30,11 +35,20 @@ service cloud.firestore {
     function text(f, max) {
       return !(f in incoming()) || (incoming()[f] is string && incoming()[f].size() <= max);
     }
+    function requiredText(f, max) {
+      return f in incoming() && incoming()[f] is string && incoming()[f].size() > 0 && incoming()[f].size() <= max;
+    }
     // Optional date field: "" or YYYY-MM-DD.
     function day(f) {
       return !(f in incoming())
         || (incoming()[f] is string && (incoming()[f] == '' || incoming()[f].matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')));
     }
+    function requiredDay(f) {
+      return f in incoming() && incoming()[f] is string && incoming()[f].matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+    }
+    function flag(f) { return !(f in incoming()) || incoming()[f] is bool; }
+    function list(f, max) { return !(f in incoming()) || (incoming()[f] is list && incoming()[f].size() <= max); }
+    function changedOnly(keys) { return incoming().diff(resource.data).affectedKeys().hasOnly(keys); }
 
     // ---------- access list ----------
     match /members/{email} {
@@ -49,20 +63,36 @@ service cloud.firestore {
       allow delete: if isAdmin() && email != myEmail();
     }
 
-    // ---------- day-to-day: any member ----------
+    // ---------- jobs ----------
     match /jobs/{id} {
+      function validJob() {
+        return incoming().keys().hasOnly(['title', 'area', 'owner', 'due', 'priority', 'status', 'notes', 'doneOn', 'createdAt',
+            'needsReview', 'feedback', 'reviewNote', 'reviewedBy', 'reviewedAt', 'fromReport', 'updatedBy', 'updatedAt'])
+          && requiredText('title', 200)
+          && text('area', 80) && text('owner', 80) && text('notes', 2000)
+          && text('feedback', 2000) && text('reviewNote', 2000) && text('reviewedBy', 120) && text('fromReport', 100)
+          && day('due') && day('doneOn') && day('reviewedAt') && flag('needsReview')
+          && incoming().status in ['Not started', 'In progress', 'Awaiting review', 'Done']
+          && (!('priority' in incoming()) || incoming().priority in ['High', 'Medium', 'Low'])
+          && (!('createdAt' in incoming()) || incoming().createdAt is number);
+      }
+      // The job's owner may only change its status and feedback, and can't skip a review.
+      function ownerUpdate() {
+        return myPerson() != ''
+          && resource.data.get('owner', '') == myPerson()
+          && changedOnly(['status', 'doneOn', 'feedback', 'updatedBy', 'updatedAt'])
+          && incoming().status in ['Not started', 'In progress', 'Awaiting review', 'Done']
+          && !(resource.data.get('needsReview', false) == true && incoming().status == 'Done')
+          && !(resource.data.get('needsReview', false) == true && resource.data.status == 'Done')
+          && text('feedback', 2000) && day('doneOn');
+      }
       allow read: if isMember();
-      allow create, update: if isMember() && stamped()
-        && incoming().keys().hasOnly(['title', 'area', 'owner', 'due', 'priority', 'status', 'notes', 'doneOn', 'createdAt', 'updatedBy', 'updatedAt'])
-        && incoming().title is string && incoming().title.size() > 0 && incoming().title.size() <= 200
-        && text('area', 80) && text('owner', 80) && text('notes', 2000)
-        && day('due') && day('doneOn')
-        && incoming().status in ['Not started', 'In progress', 'Done']
-        && (!('priority' in incoming()) || incoming().priority in ['High', 'Medium', 'Low'])
-        && (!('createdAt' in incoming()) || incoming().createdAt is number);
-      allow delete: if isMember();
+      allow create: if isAdmin() && stamped() && validJob();
+      allow update: if isMember() && stamped() && ((isAdmin() && validJob()) || ownerUpdate());
+      allow delete: if isAdmin();
     }
 
+    // ---------- shared day-to-day records: any member ----------
     match /rota/{week} {
       allow read: if isMember();
       allow create, update: if isMember() && stamped()
@@ -77,9 +107,48 @@ service cloud.firestore {
       allow read: if isMember();
       allow create, update: if isMember() && stamped()
         && incoming().keys().hasOnly(['date', 'owner', 'done', 'next', 'decisions', 'followUp', 'updatedBy', 'updatedAt'])
-        && incoming().date is string && incoming().date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && requiredDay('date')
         && text('owner', 80) && text('done', 4000) && text('next', 4000)
         && text('decisions', 4000) && text('followUp', 4000);
+      allow delete: if isAdmin();
+    }
+
+    // One record per duty per day, e.g. 2026-11-03_parlour-am-milking
+    match /routine/{id} {
+      allow read: if isMember();
+      allow create, update: if isMember() && stamped()
+        && incoming().keys().hasOnly(['date', 'duty', 'person', 'note', 'updatedBy', 'updatedAt'])
+        && requiredDay('date') && requiredText('duty', 80) && text('person', 60) && text('note', 500)
+        && id.matches('^' + incoming().date + '_.+');
+      allow delete: if isMember() && (isAdmin() || resource.data.updatedBy == myEmail());
+    }
+
+    // Members report problems; admins turn them into jobs or close them.
+    match /reports/{id} {
+      allow read: if isMember();
+      allow create: if isMember() && stamped()
+        && incoming().keys().hasOnly(['text', 'area', 'duty', 'person', 'date', 'status', 'updatedBy', 'updatedAt'])
+        && requiredText('text', 2000) && text('area', 80) && text('duty', 80) && text('person', 60)
+        && requiredDay('date') && incoming().status == 'Open';
+      allow update: if isAdmin() && stamped()
+        && incoming().keys().hasOnly(['text', 'area', 'duty', 'person', 'date', 'status', 'jobId', 'updatedBy', 'updatedAt'])
+        && incoming().status in ['Open', 'Closed', 'Made into job'];
+      allow delete: if isAdmin();
+    }
+
+    // Grazing instructions: admins write them; anyone can mark them done.
+    match /allocations/{id} {
+      function validAllocation() {
+        return incoming().keys().hasOnly(['date', 'slot', 'herd', 'mapId', 'section', 'note', 'done', 'doneBy', 'doneAt', 'updatedBy', 'updatedAt'])
+          && requiredDay('date')
+          && incoming().slot in ['Morning', 'Daytime', 'Evening', 'Night']
+          && text('herd', 60) && text('mapId', 60) && text('section', 40) && text('note', 1000)
+          && flag('done') && text('doneBy', 120) && day('doneAt');
+      }
+      allow read: if isMember();
+      allow create: if isAdmin() && stamped() && validAllocation();
+      allow update: if isMember() && stamped() && validAllocation()
+        && (isAdmin() || changedOnly(['done', 'doneBy', 'doneAt', 'updatedBy', 'updatedAt']));
       allow delete: if isAdmin();
     }
 
@@ -88,10 +157,64 @@ service cloud.firestore {
       allow read: if isMember();
       allow create, update: if isAdmin() && stamped()
         && incoming().keys().hasOnly(['name', 'role', 'phone', 'days', 'kind', 'order', 'updatedBy', 'updatedAt'])
-        && incoming().name is string && incoming().name.size() > 0 && incoming().name.size() <= 60
+        && requiredText('name', 60)
         && text('role', 120) && text('phone', 30) && text('days', 120)
         && incoming().kind in ['team', 'contact']
         && (!('order' in incoming()) || incoming().order is number);
+      allow delete: if isAdmin();
+    }
+
+    match /events/{id} {
+      allow read: if isMember();
+      allow create, update: if isAdmin() && stamped()
+        && incoming().keys().hasOnly(['title', 'date', 'time', 'kbId', 'people', 'notes', 'updatedBy', 'updatedAt'])
+        && requiredText('title', 200) && requiredDay('date')
+        && text('time', 40) && text('kbId', 20) && text('notes', 2000) && list('people', 30);
+      allow delete: if isAdmin();
+    }
+
+    // A farm map: the picture (stored inline, under 1 MB) and the sections drawn on it.
+    match /maps/{id} {
+      allow read: if isMember();
+      allow create, update: if isAdmin() && stamped()
+        && incoming().keys().hasOnly(['name', 'image', 'w', 'h', 'sections', 'order', 'updatedBy', 'updatedAt'])
+        && requiredText('name', 60)
+        && incoming().image is string && incoming().image.size() < 1000000
+        && incoming().w is number && incoming().h is number
+        && list('sections', 300)
+        && (!('order' in incoming()) || incoming().order is number);
+      allow delete: if isAdmin();
+    }
+
+    // ---------- knowledge base (imported from the farm-knowledge sheet) ----------
+    match /kb/{id} {
+      allow read: if isMember();
+      allow create, update: if isAdmin() && stamped()
+        && id.matches('^[A-Z0-9-]{1,20}$')
+        && incoming().keys().hasOnly(['title', 'description', 'area', 'often', 'time', 'months', 'condition', 'minutes', 'usual', 'duty', 'who',
+            'safety', 'records', 'equipment', 'status', 'notes', 'steps', 'order', 'updatedBy', 'updatedAt'])
+        && requiredText('title', 200) && text('description', 4000) && text('area', 80) && text('often', 40) && text('time', 40)
+        && list('months', 12) && text('condition', 120) && text('usual', 80) && text('duty', 80) && text('who', 80)
+        && text('safety', 2000) && text('records', 1000) && text('equipment', 1000) && text('status', 40) && text('notes', 4000)
+        && list('steps', 50);
+      allow delete: if isAdmin();
+    }
+
+    match /kbRules/{id} {
+      allow read: if isMember();
+      allow create, update: if isAdmin() && stamped()
+        && incoming().keys().hasOnly(['topic', 'rule', 'when', 'deadline', 'start', 'end', 'source', 'status', 'order', 'updatedBy', 'updatedAt'])
+        && requiredText('topic', 200) && text('rule', 4000) && text('when', 200) && text('deadline', 1000)
+        && day('start') && day('end') && text('source', 1000) && text('status', 40);
+      allow delete: if isAdmin();
+    }
+
+    match /contacts/{id} {
+      allow read: if isMember();
+      allow create, update: if isAdmin() && stamped()
+        && incoming().keys().hasOnly(['role', 'name', 'phone', 'email', 'when', 'notes', 'order', 'updatedBy', 'updatedAt'])
+        && requiredText('role', 120) && text('name', 120) && text('phone', 40) && text('email', 120)
+        && text('when', 300) && text('notes', 1000);
       allow delete: if isAdmin();
     }
 
@@ -107,6 +230,21 @@ service cloud.firestore {
       allow create, update: if isAdmin() && stamped()
         && incoming().keys().hasOnly(['areas', 'updatedBy', 'updatedAt'])
         && incoming().areas is list && incoming().areas.size() <= 50;
+    }
+
+    match /config/areas {
+      allow read: if isMember();
+      allow create, update: if isAdmin() && stamped()
+        && incoming().keys().hasOnly(['list', 'updatedBy', 'updatedAt'])
+        && incoming().list is list && incoming().list.size() <= 50;
+    }
+
+    // Season switches (cows housed, calving season...). Missing = Auto.
+    match /config/farmState {
+      allow read: if isMember();
+      allow create, update: if isAdmin() && stamped()
+        && incoming().keys().hasOnly(['inMilk', 'housed', 'atGrass', 'calving', 'breeding', 'calvesOnMilk', 'updatedBy', 'updatedAt'])
+        && flag('inMilk') && flag('housed') && flag('atGrass') && flag('calving') && flag('breeding') && flag('calvesOnMilk');
     }
 
     // Anything else is closed.
