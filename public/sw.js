@@ -1,10 +1,10 @@
 // Service worker: lets the app open with no signal.
 // The app's own files are fetched fresh when online (so updates arrive straight away)
 // and served from the cache when offline. Firestore handles the data's offline copy itself.
-const CACHE = "farm-shell-v1";
+const CACHE = "farm-shell-v2";
 const FIREBASE_VERSION = "12.17.0";
 const SHELL = [
-  "./", "./index.html", "./app.js", "./firebase.js", "./config.js", "./style.css", "./manifest.webmanifest",
+  "./", "./index.html", "./app.js", "./xlsx.js", "./firebase.js", "./config.js", "./style.css", "./manifest.webmanifest",
   "./icons/icon-192.png", "./icons/icon-512.png", "./icons/apple-touch-icon.png", "./icons/favicon-64.png",
   `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-app.js`,
   `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-auth.js`,
